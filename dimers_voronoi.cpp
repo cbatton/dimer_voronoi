@@ -75,11 +75,11 @@ void Dimer::GetParams(string name, int rank_in) {
         input >> line >> dr >> gr_time;
         //cout << "dr is now " << dr << " gr_time " << gr_time << endl;
         getline(input, line);
-        input >> line >> milestone_num;
-        //cout << "milestone_num is now " << milestone_num << endl;
+        input >> line >> voronoi_num;
+        //cout << "voronoi_num is now " << voronoi_num << endl;
         getline(input, line);
-        input >> line >> milestones_txt;
-        //cout << "milestones_txt is now " << milestones_txt << endl;
+        input >> line >> voronoi_txt;
+        //cout << "voronoi_txt is now " << voronoi_txt << endl;
         getline(input, line);
         input >> line >> cell_tar;
         //cout << "cell_tar is now " << cell_tar << endl;
@@ -118,24 +118,16 @@ void Dimer::GetParams(string name, int rank_in) {
             }
         }
         // Initialize particles such that they are in middle of cell_tar
-        // Read milestones first
-        milestones.resize(milestone_num, 0);
-        ifstream input_milestones;
-        input_milestones.open(milestones_txt);
-        for(int i=0; i<milestone_num; i++) {
-            input_milestones >> milestones[i];
-            //cout << i << " " << milestones[i] << endl;
-            getline(input_milestones, line);
+        // Read voronoi list first
+        voronoi.resize(voronoi_num, 0);
+        ifstream input_voronoi;
+        input_voronoi.open(voronoi_txt);
+        for(int i=0; i<voronoi_num; i++) {
+            input_voronoi >> voronoi[i];
+            //cout << i << " " << voronoi[i] << endl;
+            getline(input_voronoi, line);
         }
-        if(cell_tar == 0) {
-            bond_umb = milestones[0]-0.1;
-        }
-        else if(cell_tar == milestone_num) {
-            bond_umb = milestones[milestone_num-1]+0.1;
-        }
-        else {
-            bond_umb = 0.5*(milestones[cell_tar]+milestones[cell_tar-1]);
-        }
+        bond_umb = voronoi[cell_tar];
         //By convention, first two particles are the dimer
         float phi_bond = 0;
         float phi_wca = 0;
@@ -152,9 +144,7 @@ void Dimer::GetParams(string name, int rank_in) {
         // Prepare g_r
         num_bins_gr = int(box[0]*0.5*sqrt(3)/dr); 
         g_r_storage = vector<vector<float>>(4,vector<float>(num_bins_gr,0));
-        R_time.resize(milestone_num,0.0);
-        N_hits.resize(milestone_num, vector<int>(milestone_num,0));
-        k_hits.resize(milestone_num+1, vector<int>(milestone_num+1,0));
+        k_hits.resize(voronoi_num, vector<int>(voronoi_num,0));
     }
     // also modify config path
     config_file.open("string_"+to_string(rank_in)+"_config.xyz", std::ios_base::app);
@@ -429,30 +419,30 @@ void Dimer::BiasStep(float* values) {
     PBCWrap(state[1]);
 }
 
-int Dimer::MilestoneIndex(float bond_len) {
-    // Get milestone index
+int Dimer::VoronoiIndex(float bond_len) {
+    // Get voronoi index
     // Use cell_tar to help inform where we are
     if(cell_tar == 0) {
-        if(bond_len > milestones[0]) {
-            return 0;
+        if(bond_len > 0.5*(voronoi[0]+voronoi[1])) {
+            return 1;
         }
         else {
             return -2;
         }
     }
-    else if(cell_tar == milestone_num) {
-        if(bond_len < milestones[milestone_num-1]) {
-            return milestone_num-1;
+    else if(cell_tar == (voronoi_num-1)) {
+        if(bond_len < 0.5*(voronoi[voronoi_num-2]+voronoi[voronoi_num-1])) {
+            return voronoi_num-2;
         }
         else {
             return -2;
         }
     }
-    else if(bond_len < milestones[cell_tar-1]) {
+    else if(bond_len < 0.5*(voronoi[cell_tar-1]+voronoi[cell_tar])) {
         return cell_tar-1;
     }
-    else if(bond_len > milestones[cell_tar]) {
-        return cell_tar;
+    else if(bond_len > 0.5*(voronoi[cell_tar]+voronoi[cell_tar+1])) {
+        return cell_tar+1;
     }
     return -2;
 }
@@ -485,9 +475,9 @@ void Dimer::Equilibriate(int steps) {
         BDStepEquil();
         // Check to see if in Voronoi cell
         float bond_len = BondLength();
-        // Check to see if we crossed a milestone
-        int milestone_check = MilestoneIndex(bond_len);
-        if(milestone_check != -2) {
+        // Check to see if we crossed a voronoi boundary
+        int voronoi_check = VoronoiIndex(bond_len);
+        if(voronoi_check != -2) {
             // Reset
             state = state_old;
         }
@@ -509,37 +499,44 @@ void Dimer::Simulate(int steps) {
     ofstream config_file_2;
     config_file_2.precision(10);
     config_file_2.open(config, std::ios_base::app);
-    int milestone_last = -1;
+    // Dump configurations that cross Voronoi cells
+    ofstream config_file_back;
+    ofstream config_file_forw;
+    if(cell_tar == 0) {
+        config_file_forw.precision(10);
+        config_file_forw.open("config_"+to_string(cell_tar+1)+".xyz", std::ios_base::app);
+    }
+    else if(cell_tar == (voronoi_num-1)) {
+        config_file_back.precision(10);
+        config_file_back.open("config_"+to_string(cell_tar-1)+".xyz", std::ios_base::app);
+    }
+    else {
+        config_file_forw.precision(10);
+        config_file_forw.open("config_"+to_string(cell_tar+1)+".xyz", std::ios_base::app);
+        config_file_back.precision(10);
+        config_file_back.open("config_"+to_string(cell_tar-1)+".xyz", std::ios_base::app);
+    }
     double time_counter = 0;
     for(int i=0; i<steps; i++) {
         generator = Saru(seed_base, count_step++);
         vector<vector<float>> state_old(state);
         BDStep();
-        // Check to see if in Voronoi cell, milestoning stuff
+        // Check to see if in Voronoi cell
         float bond_len = BondLength();
         time_counter += dt;
-        // Check to see if we crossed a milestone
-        int milestone_check = MilestoneIndex(bond_len);
-        if(milestone_check != -2) {
+        // Check to see if we crossed a voronoi
+        int voronoi_check = VoronoiIndex(bond_len);
+        if(voronoi_check != -2) {
             // Reset
             state = state_old;
             // Iterate counting variables
-            if(cell_tar == milestone_check) {
-                k_hits[cell_tar][milestone_check+1] += 1;
+            if((cell_tar+1) == voronoi_check) {
+                k_hits[cell_tar][voronoi_check] += 1;
+                DumpXYZ(config_file_forw);
             }
-            else {
-                k_hits[cell_tar][milestone_check] += 1;
-            }
-            if(milestone_last == -1) {
-                milestone_last = milestone_check;
-            }
-            else {
-                if(milestone_last != milestone_check) {
-                    N_hits[milestone_last][milestone_check] += 1;
-                    R_time[milestone_last] += time_counter;
-                    time_counter = 0;
-                    milestone_last = milestone_check;
-                }
+            else if ((cell_tar-1) == voronoi_check) {
+                k_hits[cell_tar][voronoi_check] += 1;
+                DumpXYZ(config_file_back);
             }
         }
         if(i%check_time==0) {
@@ -564,21 +561,6 @@ void Dimer::Simulate(int steps) {
         }
         if(i%gr_time==0) {
             RDFSample();
-        }
-    }
-    // Add rest of time_counter to appropriate bin
-    if(cell_tar == 0) {
-        R_time[0] = time_counter;
-    }
-    else if(cell_tar == milestone_num) {
-        R_time[milestone_num-1] = time_counter;
-    }
-    else {
-        if(milestone_last == -1) {
-            cout << "Simulation too short to hit a boundary!" << endl;
-        }
-        else {
-            R_time[milestone_last] += time_counter;
         }
     }
 }
@@ -833,28 +815,13 @@ void Dimer::RDFAnalyzer() {
     }
 }
 
-void Dimer::DumpMilestone() {
+void Dimer::DumpVoronoi() {
     // Dump milestoning things
     ofstream myfile;
     myfile.precision(10);
-    myfile.open("R_time.txt");
-    for(int i=0; i<milestone_num; i++) {
-        myfile << std::scientific << R_time[i] << "\n";
-    }
-    myfile.close();
-
-    myfile.open("N_hits.txt");
-    for(int i=0; i<milestone_num; i++) {
-        for(int j=0; j<milestone_num; j++) {
-            myfile << N_hits[i][j] << " ";
-        }
-        myfile << "\n";
-    }
-    myfile.close();
-
     myfile.open("k_hits.txt");
-    for(int i=0; i<milestone_num+1; i++) {
-        for(int j=0; j<milestone_num+1; j++) {
+    for(int i=0; i<voronoi_num+1; i++) {
+        for(int j=0; j<voronoi_num+1; j++) {
             myfile << k_hits[i][j] << " ";
         }
         myfile << "\n";
@@ -874,6 +841,6 @@ int main(int argc, char* argv[]) {
     system.DumpPhi();
     system.DumpBond();
     system.RDFAnalyzer();
-    system.DumpMilestone();
+    system.DumpVoronoi();
     //system.DumpStates();
 }

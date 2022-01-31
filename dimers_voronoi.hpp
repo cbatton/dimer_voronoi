@@ -69,10 +69,10 @@ class Dimer {
         void DumpStates();
         // Input state
         void UseRestart();
-        // Get milestone we are past
-        int MilestoneIndex(float);
-        // Dump milestone info
-        void DumpMilestone();
+        // Get voronoi cell we are in
+        int VoronoiIndex(float);
+        // Dump voronoi info
+        void DumpVoronoi();
         // Sample RDF
         void RDFSample();
         // RDF f1
@@ -138,12 +138,10 @@ class Dimer {
         string config = "config.xyz";
         ofstream config_file;
         // Milestoning variables
-        int milestone_num; // number of milestones
-        string milestones_txt = "milestones.txt";
-        vector<float> milestones; // milestones with respect to bond distance
-        int cell_tar = 0; // cell index, by constraint bounded between milestone with same index and -1 that
-        vector<float> R_time; // time spent associated with milestones
-        vector<vector<int>> N_hits; // number of times index has hit N_j after last touching N_i
+        int voronoi_num; // number of voronoi
+        string voronoi_txt = "voronoi.txt";
+        vector<float> voronoi; // voronoi with respect to bond distance
+        int cell_tar = 0; // target Voronoi cell
         vector<vector<int>> k_hits; // number of times index has hit N_i total
 
 };
