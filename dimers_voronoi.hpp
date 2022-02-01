@@ -141,6 +141,7 @@ class Dimer {
         int voronoi_num; // number of voronoi
         string voronoi_txt = "voronoi.txt";
         vector<float> voronoi; // voronoi with respect to bond distance
+        vector<vector<float>> voronoi_boundaries; // voronoi cell boundaries
         int cell_tar = 0; // target Voronoi cell
         vector<vector<int>> k_hits; // number of times index has hit N_i total
 

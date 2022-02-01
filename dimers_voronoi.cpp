@@ -95,9 +95,9 @@ void Dimer::GetParams(string name, int rank_in) {
         state.resize(num_particles, vector<float>(3,0));
         // Put particles on an incomplete cubic lattice
         int num_spacing = ceil(pow(num_particles,1.0/3.0));
-        double spacing_x = box[0]/num_spacing;
-        double spacing_y = box[1]/num_spacing;
-        double spacing_z = box[2]/num_spacing;
+        float spacing_x = box[0]/num_spacing;
+        float spacing_y = box[1]/num_spacing;
+        float spacing_z = box[2]/num_spacing;
         int count = 0;
         int id_x = 0;
         int id_y = 0;
@@ -120,12 +120,21 @@ void Dimer::GetParams(string name, int rank_in) {
         // Initialize particles such that they are in middle of cell_tar
         // Read voronoi list first
         voronoi.resize(voronoi_num, 0);
+        voronoi_boundaries = vector<vector<float>>(voronoi_num,vector<float>(2,0));
         ifstream input_voronoi;
         input_voronoi.open(voronoi_txt);
         for(int i=0; i<voronoi_num; i++) {
             input_voronoi >> voronoi[i];
             //cout << i << " " << voronoi[i] << endl;
             getline(input_voronoi, line);
+        }
+        voronoi_boundaries[0][0] = 0;
+        voronoi_boundaries[0][1] = 0.5*(voronoi[0]+voronoi[1]);
+        voronoi_boundaries[voronoi_num-1][0] = 0.5*(voronoi[voronoi_num-2]+voronoi[voronoi_num-1]);
+        voronoi_boundaries[voronoi_num-1][1] = 0.5*sqrt(3)*box[0];
+        for(int i=1; i<(voronoi_num-1); i++) {
+            voronoi_boundaries[i][0] = 0.5*(voronoi[i-1]+voronoi[i]);
+            voronoi_boundaries[i][1] = 0.5*(voronoi[i]+voronoi[i+1]);
         }
         bond_umb = voronoi[cell_tar];
         //By convention, first two particles are the dimer
@@ -423,28 +432,44 @@ int Dimer::VoronoiIndex(float bond_len) {
     // Get voronoi index
     // Use cell_tar to help inform where we are
     if(cell_tar == 0) {
-        if(bond_len > 0.5*(voronoi[0]+voronoi[1])) {
-            return 1;
+        if(bond_len > voronoi_boundaries[0][1]) {
+            for(int i=1; i<voronoi_num; i++) {
+                if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+                    return i;
+                }
+            }
         }
         else {
-            return -2;
+            return 0;
         }
     }
     else if(cell_tar == (voronoi_num-1)) {
-        if(bond_len < 0.5*(voronoi[voronoi_num-2]+voronoi[voronoi_num-1])) {
-            return voronoi_num-2;
+        if(bond_len < voronoi_boundaries[voronoi_num-1][0]) {
+            for(int i=voronoi_num-2; i>0; i--) {
+                if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+                    return i;
+                }
+            }
         }
         else {
-            return -2;
+            return voronoi_num-1;
         }
     }
-    else if(bond_len < 0.5*(voronoi[cell_tar-1]+voronoi[cell_tar])) {
-        return cell_tar-1;
+    else if(bond_len > voronoi_boundaries[cell_tar][1]) {
+        for(int i=cell_tar+1; i<voronoi_num; i++) {
+            if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+                return i;
+            }
+        }
     }
-    else if(bond_len > 0.5*(voronoi[cell_tar]+voronoi[cell_tar+1])) {
-        return cell_tar+1;
+    if(bond_len < voronoi_boundaries[cell_tar][0]) {
+        for(int i=cell_tar-1; i>0; i--) {
+            if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+                return i;
+            }
+        }
     }
-    return -2;
+    return cell_tar;
 }
 
 void Dimer::Equilibriate(int steps) {
@@ -477,7 +502,7 @@ void Dimer::Equilibriate(int steps) {
         float bond_len = BondLength();
         // Check to see if we crossed a voronoi boundary
         int voronoi_check = VoronoiIndex(bond_len);
-        if(voronoi_check != -2) {
+        if(voronoi_check != cell_tar) {
             // Reset
             state = state_old;
         }
@@ -526,7 +551,7 @@ void Dimer::Simulate(int steps) {
         time_counter += dt;
         // Check to see if we crossed a voronoi
         int voronoi_check = VoronoiIndex(bond_len);
-        if(voronoi_check != -2) {
+        if(voronoi_check != cell_tar) {
             // Reset
             state = state_old;
             // Iterate counting variables
