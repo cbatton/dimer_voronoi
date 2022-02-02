@@ -434,7 +434,7 @@ int Dimer::VoronoiIndex(float bond_len) {
     if(cell_tar == 0) {
         if(bond_len > voronoi_boundaries[0][1]) {
             for(int i=1; i<voronoi_num; i++) {
-                if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+                if((bond_len > voronoi_boundaries[i][0]) && (bond_len <= voronoi_boundaries[i][1])) {
                     return i;
                 }
             }
@@ -444,9 +444,9 @@ int Dimer::VoronoiIndex(float bond_len) {
         }
     }
     else if(cell_tar == (voronoi_num-1)) {
-        if(bond_len < voronoi_boundaries[voronoi_num-1][0]) {
+        if(bond_len <= voronoi_boundaries[voronoi_num-1][0]) {
             for(int i=voronoi_num-2; i>0; i--) {
-                if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+                if((bond_len > voronoi_boundaries[i][0]) && (bond_len <= voronoi_boundaries[i][1])) {
                     return i;
                 }
             }
@@ -457,14 +457,14 @@ int Dimer::VoronoiIndex(float bond_len) {
     }
     else if(bond_len > voronoi_boundaries[cell_tar][1]) {
         for(int i=cell_tar+1; i<voronoi_num; i++) {
-            if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+            if((bond_len > voronoi_boundaries[i][0]) && (bond_len <= voronoi_boundaries[i][1])) {
                 return i;
             }
         }
     }
-    if(bond_len < voronoi_boundaries[cell_tar][0]) {
+    else if(bond_len <= voronoi_boundaries[cell_tar][0]) {
         for(int i=cell_tar-1; i>0; i--) {
-            if((bond_len > voronoi_boundaries[i][0]) && (bond_len < voronoi_boundaries[i][1])) {
+            if((bond_len > voronoi_boundaries[i][0]) && (bond_len <= voronoi_boundaries[i][1])) {
                 return i;
             }
         }
@@ -525,21 +525,11 @@ void Dimer::Simulate(int steps) {
     config_file_2.precision(10);
     config_file_2.open(config, std::ios_base::app);
     // Dump configurations that cross Voronoi cells
-    ofstream config_file_back;
-    ofstream config_file_forw;
-    if(cell_tar == 0) {
-        config_file_forw.precision(10);
-        config_file_forw.open("config_"+to_string(cell_tar+1)+".xyz", std::ios_base::app);
-    }
-    else if(cell_tar == (voronoi_num-1)) {
-        config_file_back.precision(10);
-        config_file_back.open("config_"+to_string(cell_tar-1)+".xyz", std::ios_base::app);
-    }
-    else {
-        config_file_forw.precision(10);
-        config_file_forw.open("config_"+to_string(cell_tar+1)+".xyz", std::ios_base::app);
-        config_file_back.precision(10);
-        config_file_back.open("config_"+to_string(cell_tar-1)+".xyz", std::ios_base::app);
+    vector<ofstream> config_files;
+    config_files.resize(voronoi_num);
+    for(int i=0; i<voronoi_num; i++) {
+        config_files[i].precision(10);
+        config_files[i].open("config_"+to_string(i)+".xyz", std::ios_base::app);
     }
     double time_counter = 0;
     for(int i=0; i<steps; i++) {
@@ -553,16 +543,11 @@ void Dimer::Simulate(int steps) {
         int voronoi_check = VoronoiIndex(bond_len);
         if(voronoi_check != cell_tar) {
             // Reset
+            k_hits[cell_tar][voronoi_check] += 1;
+            if(k_hits[cell_tar][voronoi_check]%10==0) { 
+                DumpXYZ(config_files[voronoi_check]);
+            }
             state = state_old;
-            // Iterate counting variables
-            if((cell_tar+1) == voronoi_check) {
-                k_hits[cell_tar][voronoi_check] += 1;
-                DumpXYZ(config_file_forw);
-            }
-            else if ((cell_tar-1) == voronoi_check) {
-                k_hits[cell_tar][voronoi_check] += 1;
-                DumpXYZ(config_file_back);
-            }
         }
         if(i%check_time==0) {
             float phi_bond = 0;
@@ -845,8 +830,8 @@ void Dimer::DumpVoronoi() {
     ofstream myfile;
     myfile.precision(10);
     myfile.open("k_hits.txt");
-    for(int i=0; i<voronoi_num+1; i++) {
-        for(int j=0; j<voronoi_num+1; j++) {
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
             myfile << k_hits[i][j] << " ";
         }
         myfile << "\n";
