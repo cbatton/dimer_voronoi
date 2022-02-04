@@ -54,7 +54,7 @@ class Dimer {
         // Run equilibration
         void Equilibriate(int);
         // Run simulation
-        void Simulate(int);
+        virtual void Simulate(int);
         // Run simulation with bias
         void SimulateBias(int);
         // Dump state in XYZ format

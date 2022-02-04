@@ -1,0 +1,21 @@
+CC = g++
+CCFLAGS = -std=c++11 -Wall -Ofast -march=native -frename-registers -funroll-loops
+OPENMP = #-fopenmp
+LDFLAGS = #-lfftw3
+
+TARGETS = main_voronoi
+OBJS = run_voronoi.o dimers_voronoi.o
+
+all: $(TARGETS)
+
+main_voronoi: $(OBJS)
+	$(CC) $(OBJS) -o $@ $(CCFLAGS) $(OPENMP) $(LDFLAGS)
+
+run_voronoi.o: run_voronoi.cpp dimers_voronoi.hpp
+	$(CC) -c $(OPENMP) $(CCFLAGS) run_voronoi.cpp
+
+dimers_voronoi.o: dimers_voronoi.cpp dimers_voronoi.hpp
+	$(CC) -c $(OPENMP) $(CCFLAGS) dimers_voronoi.cpp
+
+clean:
+	rm -f $(OBJS) $(TARGETS)
