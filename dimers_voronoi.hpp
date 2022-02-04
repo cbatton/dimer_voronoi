@@ -20,7 +20,7 @@ class Dimer {
         // Default destructor
         ~Dimer();
         // Input parameters
-        void GetParams(string, int);
+        virtual void GetParams(string, int);
         // Input parameters when not using an input file
         void GetParams();
         // Get energy

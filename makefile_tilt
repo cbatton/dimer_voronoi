@@ -1,0 +1,27 @@
+CC = mpic++
+CCFLAGS = -std=c++11 -Wall -Ofast -march=native -frename-registers -funroll-loops
+OPENMP = #-fopenmp
+LDFLAGS = #-lfftw3
+LIBS = #
+INCLUDES = #
+
+TARGETS = main_tilt
+SRCS = run_tilt.cpp dimers_tilt.cpp
+OBJS = $(SRCS:.cpp=.o)
+
+.PHONY: depend clean
+
+all: $(TARGETS)
+
+main_tilt: $(OBJS)
+	$(CC) $(OBJS) -o $@ $(CCFLAGS) $(OPENMP) $(LDFLAGS) $(LIBS) $(INCLUDES)
+
+.cpp.o:
+	$(CC) -c $< -o $@ $(CCFLAGS) $(OPENMP) $(LDFLAGS) $(LIBS) $(INCLUDES)
+
+clean:
+	rm -f $(OBJS) $(TARGETS)
+
+depend: $(SRCS)
+	makedepend -fmakefile_tilt $(INCLUDES) $^
+

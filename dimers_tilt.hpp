@@ -15,10 +15,26 @@ using namespace std;
 
 class DimerTilt : public Dimer {
     public:
-        void Simulate(int);
+        override void GetParams(string, int, char*);
+        override void Simulate(int);
         void FreeEnergies();
         void ReactionRate();
         vector<float> free_energies;
+        string free_energies_txt;
+        vector<float> free_energies_ref;
+
+        // MPI variables
+        int world_size=1;
+        int world_rank=0;
+        string local_path;
+        vector<string> rank_paths;
+        string output;
+        string output_path;
+        ofstream my_cout;
+
+        // Have to get all stored config files from the other runs
+        vector<vector<vector<vector<float>>>> state_database;
+
 };
 
 #endif

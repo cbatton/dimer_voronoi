@@ -6,12 +6,15 @@
 #include <ctime>
 #include <string>
 #include <vector>
+#include <mpi.h>
 #include <chrono>
 #include "saruprng.hpp"
 #include "dimers_tilt.hpp"
 using namespace std;
 
 int main(int argc, char* argv[]) {
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
     DimerTilt system;
     system.GetParams("param", 0);
     system.Equilibriate(system.cycles_equil);
@@ -24,5 +27,7 @@ int main(int argc, char* argv[]) {
     system.DumpBond();
     system.RDFAnalyzer();
     system.DumpVoronoi();
-    //system.DumpStates();
+    // Finalize the MPI environment
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
 }
