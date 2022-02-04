@@ -2,20 +2,26 @@ CC = g++
 CCFLAGS = -std=c++11 -Wall -Ofast -march=native -frename-registers -funroll-loops
 OPENMP = #-fopenmp
 LDFLAGS = #-lfftw3
+LIBS = #
+INCLUDES = #
 
 TARGETS = main_voronoi
-OBJS = run_voronoi.o dimers_voronoi.o
+SRCS = run_voronoi.cpp dimers_voronoi.cpp
+OBJS = $(SRCS:.cpp=.o)
+
+.PHONY: depend clean
 
 all: $(TARGETS)
 
 main_voronoi: $(OBJS)
-	$(CC) $(OBJS) -o $@ $(CCFLAGS) $(OPENMP) $(LDFLAGS)
+	$(CC) $(OBJS) -o $@ $(CCFLAGS) $(OPENMP) $(LDFLAGS) $(LIBS) $(INCLUDES)
 
-run_voronoi.o: run_voronoi.cpp dimers_voronoi.hpp
-	$(CC) -c $(OPENMP) $(CCFLAGS) run_voronoi.cpp
-
-dimers_voronoi.o: dimers_voronoi.cpp dimers_voronoi.hpp
-	$(CC) -c $(OPENMP) $(CCFLAGS) dimers_voronoi.cpp
+.cpp.o:
+	$(CC) -c $< -o $@ $(CCFLAGS) $(OPENMP) $(LDFLAGS) $(LIBS) $(INCLUDES)
 
 clean:
 	rm -f $(OBJS) $(TARGETS)
+
+depend: $(SRCS)
+	makedepend -fmakefile_voronoi $(INCLUDES) $^
+
