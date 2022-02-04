@@ -27,7 +27,6 @@ void Dimer::GetParams(string name, int rank_in) {
         cout << "No input file" << endl;
     }
     else {
-        char buffer;
         string line;
         //cout << "Param file detected. Changing values." << endl;
         input >> line >> temp;
@@ -445,7 +444,7 @@ int Dimer::VoronoiIndex(float bond_len) {
     }
     else if(cell_tar == (voronoi_num-1)) {
         if(bond_len <= voronoi_boundaries[voronoi_num-1][0]) {
-            for(int i=voronoi_num-2; i>0; i--) {
+            for(int i=voronoi_num-2; i>=0; i--) {
                 if((bond_len > voronoi_boundaries[i][0]) && (bond_len <= voronoi_boundaries[i][1])) {
                     return i;
                 }
@@ -463,7 +462,7 @@ int Dimer::VoronoiIndex(float bond_len) {
         }
     }
     else if(bond_len <= voronoi_boundaries[cell_tar][0]) {
-        for(int i=cell_tar-1; i>0; i--) {
+        for(int i=cell_tar-1; i>=0; i--) {
             if((bond_len > voronoi_boundaries[i][0]) && (bond_len <= voronoi_boundaries[i][1])) {
                 return i;
             }
@@ -544,7 +543,7 @@ void Dimer::Simulate(int steps) {
         if(voronoi_check != cell_tar) {
             // Reset
             k_hits[cell_tar][voronoi_check] += 1;
-            if(k_hits[cell_tar][voronoi_check]%10==0) { 
+            if(k_hits[cell_tar][voronoi_check]%1000==0) { 
                 DumpXYZ(config_files[voronoi_check]);
             }
             state = state_old;
