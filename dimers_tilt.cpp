@@ -1,5 +1,6 @@
 #include <iostream> 
 #include <fstream>
+#include <stdlib.h>
 #include <random>
 #include <algorithm>
 #include <math.h>
@@ -12,6 +13,11 @@
 #include "dimers_voronoi.hpp"
 #include "dimers_tilt.hpp"
 using namespace std;
+
+// LAPACK
+extern "C" {
+  void dgesv_(int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, int *info);
+}
 
 void DimerTilt::GetParams(string name, int argc, char* argv[]) override {
     // MPI housekeeping
@@ -410,4 +416,37 @@ void DimerTilt::FreeEnergies(vector<vector<float>>& k_) {
     // \sum_b fe_b k_b,a = \sum_b fe_a k_a,b
     // with fe_0 = fe_{0,ref}, fe_{voronoi_num-1} = 0
     // Solve for the rest of them
+    vector<double> k_matrix((voronoi_num-2)*(voronoi_num-2));
+    vector<double> b(voronoi_num-2);
+    // Diagonal terms first
+    for(int i=1; i<voronoi_num-1; i++) {
+        for(int j=1; j<voronoi_num-1; j++) {
+            k_matrix[(i-1)*voronoi_num] -= k_[i][j];
+        }
+    }
+    // Now off-diagonal
+    for(int i=1; i<voronoi_num-1; i++) {
+        for(int j=1; j<voronoi_num-1; j++) {
+            if(i != j) {
+                k_matrix[(i-1)+(j-1)*voronoi_num] += k_[j][i];
+            }
+        }
+    }
+    // Now terms associated with a = 0
+    for(int i=1; i<voronoi_num-1; i++) {
+        b[i-1] = -k_hits[0][i]*free_energies_ref[0];
+        k_matrix[(i-1)*voronoi_num] -= k_[i][0];
+    }
+    // a = voronoi_num-1 has zero free energy, so those are handled automatically
+    // solving time
+    int dim = voronoi_num-2;
+    int info;
+    int one = 1;
+    char N = 'N';
+    vector<int> ipiv(voronoi_num-2);
+    dgesv_(&dim, &one, k_matrix.data(), &dim, ipiv.data(), b.data(), &dim, &info);
+    // Free energies are stored in b, so extract them
+    for(int i=1; i<voronoi_num-1; i++) {
+        free_energies[i] = b[i-1];
+    }
 }
