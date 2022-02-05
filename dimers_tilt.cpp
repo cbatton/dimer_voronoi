@@ -13,7 +13,7 @@
 #include "dimers_tilt.hpp"
 using namespace std;
 
-void DimerTilt::GetParams(string name, int argc, char* argv[]) {
+void DimerTilt::GetParams(string name, int argc, char* argv[]) override {
     // MPI housekeeping
     // Initialize MPI
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -44,70 +44,76 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) {
     ifstream input;
     input.open(output_path+name);
     if(input.fail()) {
-        mycout << "No input file" << endl;
+        my_cout << "No input file" << endl;
     }
     else {
         string line;
-        //mycout << "Param file detected. Changing values." << endl;
+        //my_cout << "Param file detected. Changing values." << endl;
         input >> line >> temp;
-        //mycout << "temp is now " << temp << endl;
+        //my_cout << "temp is now " << temp << endl;
         getline(input, line);
         input >> line >> mass;
-        //mycout << "mass is now " << mass << endl;
+        //my_cout << "mass is now " << mass << endl;
         getline(input, line);
         input >> line >> gamma;
-        //mycout << "gamma is now " << gamma << endl;
+        //my_cout << "gamma is now " << gamma << endl;
         getline(input, line);
         input >> line >> dt;
-        //mycout << "dt is now " << dt << endl;
+        //my_cout << "dt is now " << dt << endl;
         getline(input, line);
         input >> line >> box[0] >> box[1] >> box[2];
-        //mycout << "box is now " << box[0] << " " << box[1] << " " << box[2] << endl;
+        //my_cout << "box is now " << box[0] << " " << box[1] << " " << box[2] << endl;
         getline(input, line);
         input >> line >> height;
-        //mycout << "height is now " << height << endl;
+        //my_cout << "height is now " << height << endl;
         getline(input, line);
         input >> line >> r_0;
-        //mycout << "r_0 is now " << r_0 << endl;
+        //my_cout << "r_0 is now " << r_0 << endl;
         getline(input, line);
         input >> line >> width;
-        //mycout << "width is now " << width << endl;
+        //my_cout << "width is now " << width << endl;
         getline(input, line);
         input >> line >> dist_init;
-        //mycout << "dist_init is now " << dist_init << endl;
+        //my_cout << "dist_init is now " << dist_init << endl;
         getline(input, line);
         input >> line >> cycles >> storage_time;
-        //mycout << "Cycles " << cycles << " storage_time " << storage_time << endl;
+        //my_cout << "Cycles " << cycles << " storage_time " << storage_time << endl;
         getline(input, line);
         input >> line >> cycles_equil >> max_step;
-        //mycout << "cycles_equil " << cycles_equil << " max_step " << max_step << endl;
+        //my_cout << "cycles_equil " << cycles_equil << " max_step " << max_step << endl;
         getline(input, line);
         input >> line >> seed_base >> count_step >> frame_time >> check_time;
-        //mycout << "seed_base " << seed_base << " count_step " << count_step << " frame_time " << frame_time << " check_time " << check_time << endl;
+        //my_cout << "seed_base " << seed_base << " count_step " << count_step << " frame_time " << frame_time << " check_time " << check_time << endl;
         getline(input, line);
         input >> line >> num_solv;
-        //mycout << "num_solv is now " << num_solv << endl;
+        //my_cout << "num_solv is now " << num_solv << endl;
         getline(input, line);
         input >> line >> epsilon;
-        //mycout << "epsilon is now " << epsilon << endl;
+        //my_cout << "epsilon is now " << epsilon << endl;
         getline(input, line);
         input >> line >> dr >> gr_time;
-        //mycout << "dr is now " << dr << " gr_time " << gr_time << endl;
+        //my_cout << "dr is now " << dr << " gr_time " << gr_time << endl;
         getline(input, line);
         input >> line >> voronoi_num;
-        //mycout << "voronoi_num is now " << voronoi_num << endl;
+        //my_cout << "voronoi_num is now " << voronoi_num << endl;
         getline(input, line);
         input >> line >> voronoi_txt;
-        //mycout << "voronoi_txt is now " << voronoi_txt << endl;
+        //my_cout << "voronoi_txt is now " << voronoi_txt << endl;
         getline(input, line);
         input >> line >> cell_tar;
-        //mycout << "cell_tar is now " << cell_tar << endl;
+        //my_cout << "cell_tar is now " << cell_tar << endl;
         getline(input, line);
         input >> line >> k_umb >> bond_umb;
-        //mycout << "k_umb " << k_umb << " bond_umb " << bond_umb << endl;
+        //my_cout << "k_umb " << k_umb << " bond_umb " << bond_umb << endl;
         getline(input, line);
         input >> line >> free_energies_txt;
-        //mycout << "free_energies_txt is now " << free_energies_txt << endl;
+        //my_cout << "free_energies_txt is now " << free_energies_txt << endl;
+        getline(input, line);
+        input >> line >> k_hits_ref_time;
+        //my_cout << "k_hits_ref_time is now " << k_hits_ref_time << endl;
+        getline(input, line);
+        input >> line >> k_hits_txt;
+        //my_cout << "k_hits_txt is now " << k_hits_txt << endl;
         getline(input, line);
 
         // Initialize system
@@ -139,7 +145,6 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) {
                 id_x++;
             }
         }
-        // Initialize particles such that they are in middle of cell_tar
         // Read voronoi list first
         voronoi.resize(voronoi_num, 0);
         voronoi_boundaries = vector<vector<float>>(voronoi_num,vector<float>(2,0));
@@ -147,7 +152,7 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) {
         input_voronoi.open(voronoi_txt);
         for(int i=0; i<voronoi_num; i++) {
             input_voronoi >> voronoi[i];
-            //mycout << i << " " << voronoi[i] << endl;
+            //my_cout << i << " " << voronoi[i] << endl;
             getline(input_voronoi, line);
         }
         voronoi_boundaries[0][0] = 0;
@@ -163,11 +168,13 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) {
         free_energies_ref.resize(voronoi_num, 0);
         ifstream input_free_energies;
         input_free_energies.open(free_energies_txt);
-        for(int i=0; i<free_energies_num; i++) {
+        for(int i=0; i<voronoi_num; i++) {
             input_free_energies >> free_energies_ref[i];
-            //mycout << i << " " << free_energies[i] << endl;
+            //my_cout << i << " " << free_energies[i] << endl;
             getline(input_free_energies, line);
         }
+        // Set free_energies equal to reference to start
+        free_energies_ref = free_energies;
         //By convention, first two particles are the dimer
         float phi_bond = 0;
         float phi_wca = 0;
@@ -186,6 +193,21 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) {
         g_r_storage = vector<vector<float>>(4,vector<float>(num_bins_gr,0));
         // Prepare k_hits
         k_hits.resize(voronoi_num, vector<int>(voronoi_num,0));
+        // Now read in reference k_hits
+        k_hits_ref.resize(voronoi_num, vector<float>(voronoi_num,0));
+        ifstream input_k_hits;
+        input_k_hits.open(k_hits_txt);
+        for(int i=0; i<voronoi_num; i++) {
+            for(int j=0; j<voronoi_num; j++) {
+                input_k_hits >> k_hits_ref[i][j];
+                k_hits_ref[i][j] /= k_hits_ref_time;
+            }
+            getline(input_k_hits, line);
+        }
+        // Calculate initial reentry probabilities
+        reentry_probs.resize(voronoi_num, vector<float>(voronoi_num,0));
+        ReentryProbs(free_energies_ref, k_hits_ref, reentry_probs, reentry_cdf);
+
         // Prepare state database
         vector<vector<vector<float>>> state_database_i;
         vector<vector<float>> states;
@@ -217,13 +239,90 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) {
                 }
             }
         }
+        // Initialize configuration from state database
+        InitializeState();
     }
     // also modify config path
     config_file.open("string_"+to_string(rank_in)+"_config.xyz", std::ios_base::app);
 
 }
 
-void DimerTilt::Simulate(int steps) {
+void DimerTilt::ReentryProbs(vector<float>& fe_, vector<vector<int>>& k_, vector<vector<float>>& prob_, vector<vector<float>>& cdf_) {
+    // Calculate reentry probabilities given free energies fe_ and hitting estimates k_
+    // First evaluate normalizing factor
+    vector<float> norm(voronoi_num, 0);
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
+            norm[i] = fe_[j]*k_[j][i];
+        }
+    }
+    // Now evaluate probabilities
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
+            prob_[i][j] = fe_[j]*k_[j][i]/norm[i];
+            cdf_[i][j] = 0;
+        }
+    }
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
+            cdf_[j][i] += cdf_[j][i]+prob_[j][i];
+        }
+    }
+}
+
+void DimerTilt::ReentryProbs(vector<float>& fe_, vector<vector<float>>& k_, vector<vector<float>>& prob_, vector<vector<float>>& cdf_) {
+    // Calculate reentry probabilities given free energies fe_ and hitting estimates k_
+    // First evaluate normalizing factor
+    vector<float> norm(voronoi_num, 0);
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
+            norm[i] = fe_[j]*k_[j][i];
+        }
+    }
+    // Now evaluate probabilities
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
+            prob_[i][j] = fe_[j]*k_[j][i]/norm[i];
+            cdf_[i][j] = 0;
+        }
+    }
+    for(int i=0; i<voronoi_num; i++) {
+        for(int j=0; j<voronoi_num; j++) {
+            cdf_[j][i] += cdf_[j][i]+prob_[j][i];
+        }
+    }
+}
+
+void DimerTilt::InitializeState() {
+    // Reinitialize state from database
+    float chance_state = generator.f();
+    // Figure out what what state to choose
+    int alpha_init = -1;
+    for(int i=0; i<voronoi_num; i++) {
+        if(chance_state <= reentry_cdf[i][cell_tar]) {
+            alpha_init = i; 
+        }
+    }
+    // Now have state, determine what configuration to select
+    int database_size = state_database[alpha_init].size();
+    if(database_size == 0) {
+        // Look to left and right to see if there is another option
+        if((alpha_init > 0) && ( alpha_init < (voronoi_num-1))) {
+            int database_size_left = state_database[alpha_init-1].size(); 
+            int database_size_right = state_database[alpha_init+1].size(); 
+            if(database_size_left > database_size_right) {
+                alpha_init = alpha_init-1;
+            }
+            else {
+                alpha_init = alpha_init+1;
+            }
+        }
+    }
+    int database_config = generator.rand_select(database_size-1);
+    state = state_database[alpha_init][database_config];
+}
+
+void DimerTilt::Simulate(int steps) override {
     // Run simulation
     ofstream config_file_2;
     config_file_2.precision(10);
@@ -236,45 +335,79 @@ void DimerTilt::Simulate(int steps) {
         config_files[i].open("config_"+to_string(i)+".xyz", std::ios_base::app);
     }
     double time_counter = 0;
-    for(int i=0; i<steps; i++) {
-        generator = Saru(seed_base, count_step++);
-        vector<vector<float>> state_old(state);
-        BDStep();
-        // Check to see if in Voronoi cell
-        float bond_len = BondLength();
-        time_counter += dt;
-        // Check to see if we crossed a voronoi
-        int voronoi_check = VoronoiIndex(bond_len);
-        if(voronoi_check != cell_tar) {
-            // Reset
-            k_hits[cell_tar][voronoi_check] += 1;
-            if(k_hits[cell_tar][voronoi_check]%1000==0) { 
-                DumpXYZ(config_files[voronoi_check]);
+    // Run things in stages where we update the free energies
+    for(int stage=0; stage<steps/1000; stage++) {
+        if(stage > 0) {
+            // Re-evaluate free energies
+            // Use MPI to gather all k_hits values using reduce
+            MPI_Barrier(MPI_COMM_WORLD);
+            vector<vector<int>> k_hits_local;
+            k_hits_local.resize(voronoi_num, vector<int>(voronoi_num,0));
+            for(int i=0; i<voronoi_num; i++) {
+                MPI_Allreduce(k_hits[i].data(), k_hits_local.data(), voronoi_num, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
             }
-            state = state_old;
+            // Modify k_hits[i][voronoi-1] to 0
+            for(int i=0; i<voronoi_num; i++) {
+                k_hits_local[i][voronoi_num-1] = 0;
+            }
+            // Now process as needed for free energies
+            vector<vector<float>> k_hits_local_2;
+            k_hits_local_2.resize(voronoi_num, vector<float>(voronoi_num,0));
+            for(int i=0; i<voronoi_num; i++) {
+                for(int j=0; j<voronoi_num; j++) {
+                    k_hits_local_2[i][j] = k_hits_local[i][j]/time_counter;
+                }
+            }
+            // Modify k_hits[0] to match reference
+            for(int i=0; i<voronoi_num; i++) {
+                k_hits_local_2[0][i] = k_hits_ref[0][i];
+            }
+            // Now calculate free energies, reentry probabilities
+            FreeEnergies(k_hits_local_2);
+            ReentryProbs(free_energies, k_hits_local_2, reentry_probs, reentry_cdf);
         }
-        if(i%check_time==0) {
-            float phi_bond = 0;
-            float phi_wca = 0;
-            Energy(phi_bond,phi_wca);
-            phi = phi_bond+phi_wca;
-            mycout << "Cycle " << i << " phi_bond " << phi_bond << " phi_wca " << phi_wca << endl;
-        }
-        if(i%storage_time==0) {
-            float phi_bond = 0;
-            float phi_wca = 0;
-            Energy(phi_bond,phi_wca);
+        for(int i=0; i<steps; i++) {
+            generator = Saru(seed_base, count_step++);
+            BDStep();
+            // Check to see if in Voronoi cell
             float bond_len = BondLength();
-            phi_storage[i/storage_time][0] = phi_bond;
-            phi_storage[i/storage_time][1] = phi_wca;
-            bond_storage[i/storage_time] = bond_len;
-            state_storage[i/storage_time]= state;
-        }
-        if(i%frame_time==0) {
-            DumpXYZ(config_file_2);
-        }
-        if(i%gr_time==0) {
-            RDFSample();
+            time_counter += dt;
+            // Check to see if we crossed a voronoi
+            int voronoi_check = VoronoiIndex(bond_len);
+            if(voronoi_check != cell_tar) {
+                // Reset
+                k_hits[cell_tar][voronoi_check] += 1;
+                InitializeState();
+            }
+            if(count_step%check_time==0) {
+                float phi_bond = 0;
+                float phi_wca = 0;
+                Energy(phi_bond,phi_wca);
+                phi = phi_bond+phi_wca;
+                my_cout << "Cycle " << i << " phi_bond " << phi_bond << " phi_wca " << phi_wca << endl;
+            }
+            if(count_step%storage_time==0) {
+                float phi_bond = 0;
+                float phi_wca = 0;
+                Energy(phi_bond,phi_wca);
+                float bond_len = BondLength();
+                phi_storage[i/storage_time][0] = phi_bond;
+                phi_storage[i/storage_time][1] = phi_wca;
+                bond_storage[i/storage_time] = bond_len;
+                state_storage[i/storage_time]= state;
+            }
+            if(count_step%frame_time==0) {
+                DumpXYZ(config_file_2);
+            }
         }
     }
+}
+
+void DimerTilt::FreeEnergies(vector<vector<float>>& k_) {
+    // Evaluate free energies
+    // Have to solve a matrix equation to do so
+    // Construct those terms 
+    // \sum_b fe_b k_b,a = \sum_b fe_a k_a,b
+    // with fe_0 = fe_{0,ref}, fe_{voronoi_num-1} = 0
+    // Solve for the rest of them
 }
