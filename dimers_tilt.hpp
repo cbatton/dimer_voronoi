@@ -15,7 +15,7 @@ using namespace std;
 
 class DimerTilt : public Dimer {
     public:
-        void GetParams(string, int, char*);
+        void GetParams(string, int&, char**);
         void ReentryProbs(vector<float>&, vector<vector<int>>&, vector<vector<float>>&, vector<vector<float>>&);
         void ReentryProbs(vector<float>&, vector<vector<float>>&, vector<vector<float>>&, vector<vector<float>>&);
         void InitializeState();

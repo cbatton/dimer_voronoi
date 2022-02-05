@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     // Initialize MPI
     MPI_Init(&argc, &argv);
     DimerTilt system;
-    system.GetParams("param", 0);
+    system.GetParams("param", argc, argv);
     system.Equilibriate(system.cycles_equil);
     ofstream myfile_equil;
     myfile_equil.precision(10);

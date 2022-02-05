@@ -1,12 +1,12 @@
 CC = mpic++
 CCFLAGS = -std=c++11 -Wall -Ofast -march=native -frename-registers -funroll-loops
 OPENMP = #-fopenmp
-LDFLAGS = #-lfftw3
+LDFLAGS = -llapack -lblas -lgfortran -lm #-lfftw3
 LIBS = #
 INCLUDES = #
 
 TARGETS = main_tilt
-SRCS = run_tilt.cpp dimers_tilt.cpp
+SRCS = run_tilt.cpp dimers_tilt.cpp dimers_voronoi.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 .PHONY: depend clean

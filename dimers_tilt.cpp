@@ -19,7 +19,7 @@ extern "C" {
   void dgesv_(int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, int *info);
 }
 
-void DimerTilt::GetParams(string name, int argc, char* argv[]) override {
+void DimerTilt::GetParams(string name, int& argc, char* argv[]) {
     // MPI housekeeping
     // Initialize MPI
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -249,7 +249,7 @@ void DimerTilt::GetParams(string name, int argc, char* argv[]) override {
         InitializeState();
     }
     // also modify config path
-    config_file.open("string_"+to_string(rank_in)+"_config.xyz", std::ios_base::app);
+    config_file.open("string_"+to_string(world_rank)+"_config.xyz", std::ios_base::app);
 
 }
 
@@ -328,7 +328,7 @@ void DimerTilt::InitializeState() {
     state = state_database[alpha_init][database_config];
 }
 
-void DimerTilt::Simulate(int steps) override {
+void DimerTilt::Simulate(int steps) {
     // Run simulation
     ofstream config_file_2;
     config_file_2.precision(10);
