@@ -22,13 +22,14 @@ class DimerTilt : public Dimer {
         void Simulate(int);
         void FreeEnergies(vector<vector<float>>&);
         void ReactionRate();
-        vector<float> free_energies;
-        string free_energies_txt;
-        float k_hits_ref_time;
-        string k_hits_txt;
-        vector<float> free_energies_ref;
-        vector<vector<float>> k_hits_ref;
-        vector<vector<float>> reentry_probs;
+        double time_counter; // total simulation time
+        vector<float> free_energies; // more aptly the probabilities of states
+        string free_energies_txt; // file to read free energies from
+        double k_hits_ref_time; // time for reference fluxes
+        string k_hits_txt; // file to read references fluxes from
+        vector<float> free_energies_ref; // reference free energies
+        vector<vector<float>> k_hits_ref; // reference fluxes
+        vector<vector<float>> reentry_probs; 
         vector<vector<float>> reentry_cdf;
 
         // MPI variables
@@ -42,7 +43,6 @@ class DimerTilt : public Dimer {
 
         // Have to get all stored config files from the other runs
         vector<vector<vector<vector<float>>>> state_database;
-
 };
 
 #endif

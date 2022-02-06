@@ -340,7 +340,7 @@ void DimerTilt::Simulate(int steps) {
         config_files[i].precision(10);
         config_files[i].open("config_"+to_string(i)+".xyz", std::ios_base::app);
     }
-    double time_counter = 0;
+    time_counter = 0;
     // Run things in stages where we update the free energies
     for(int stage=0; stage<steps/1000; stage++) {
         if(stage > 0) {
@@ -442,11 +442,28 @@ void DimerTilt::FreeEnergies(vector<vector<float>>& k_) {
     int dim = voronoi_num-2;
     int info;
     int one = 1;
-    char N = 'N';
     vector<int> ipiv(voronoi_num-2);
     dgesv_(&dim, &one, k_matrix.data(), &dim, ipiv.data(), b.data(), &dim, &info);
     // Free energies are stored in b, so extract them
     for(int i=1; i<voronoi_num-1; i++) {
         free_energies[i] = b[i-1];
+    }
+}
+
+void DimerTilt::ReactionRate() {
+    // Evaluate the reaction rate
+    // given by the sum of fe_a v_{a,b} with a not in product, b in product
+    // By assumption last cell is product, so just sum into that
+    float nu_r = 0.0;
+    for(int i=0; i<voronoi_num-1; i++) {
+        nu_r += free_energies[i]*k_hits[i][0]/time_counter;
+    }
+    // Now print to file
+    if(world_rank == 0) {
+        ofstream myfile;
+        myfile.precision(10);
+        myfile.open("nu_r.txt");
+        myfile << "Reaction rate from simulation run" << endl;
+        myfile << std::scientific << nu_r << endl;
     }
 }
